@@ -44,7 +44,7 @@ gather_ps_(P) ->
         current_stacktrace
     ],
     {binary, Binaries} = erlang:process_info(P, binary),
-    [{pid, P}, {binary, gather_binary_memory(Binaries)} | erlang:process_info(Items, P)].
+    [{pid, P}, {binary, gather_binary_memory(Binaries)} | erlang:process_info(P, Items)].
 
 gather_binary_memory(Binaries) ->
     to_bin(lists:foldl(fun({_, Mem, _}, Tot) -> Mem + Tot end, 0, Binaries)).
