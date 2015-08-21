@@ -1,0 +1,11 @@
+{application, wigo, [
+    {description, "WHAT IS GOING ON???"},
+    {vsn, "0.1"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        genlib
+    ]},
+    {env, []}
+]}.
