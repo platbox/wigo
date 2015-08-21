@@ -18,7 +18,7 @@
 -spec dump(file:name()) -> {ok, file:name()} | {error, atom()}.
 
 dump() ->
-    dump(make_temp_filename("wigo.ps")).
+    dump(make_temp_filename("wigo.ps." ++ get_safe_nodename())).
 
 dump(Filename) ->
     Dump = gather_ps(),
@@ -139,6 +139,9 @@ format_messages(List) ->
     ].
 
 %%
+
+get_safe_nodename() ->
+    re:replace(to_bin(node()), <<"[^a-zA-Z0-9.@]+">>, <<".">>, [global, {return, list}]).
 
 make_temp_filename(Prefix) ->
     Now = erlang:now(),
