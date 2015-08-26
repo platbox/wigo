@@ -30,7 +30,7 @@ dump(Filename) ->
     end.
 
 gather_ps() ->
-    [gather_ps_(P) || P <- processes()].
+    lists:foldl(fun (P, Acc) -> gather_ps_(P) ++ Acc end, [], processes()).
 
 gather_ps_(P) ->
     Items = [
@@ -41,13 +41,19 @@ gather_ps_(P) ->
         reductions,
         messages,
         message_queue_len,
-        current_stacktrace
+        current_stacktrace,
+        binary
     ],
-    {binary, Binaries} = erlang:process_info(P, binary),
-    [{pid, P}, {binary, gather_binary_memory(Binaries)} | erlang:process_info(P, Items)].
+    case erlang:process_info(P, Items) of
+        Info when is_list(Info) ->
+            {binary, Binaries} = lists:keyfind(binary, 1, Info),
+            [[{pid, P}, {binary_memory, gather_binary_memory(Binaries)} | Info]];
+        undefined ->
+            []
+    end.
 
 gather_binary_memory(Binaries) ->
-    to_bin(lists:foldl(fun({_, Mem, _}, Tot) -> Mem + Tot end, 0, Binaries)).
+    lists:foldl(fun({_, Mem, _}, Tot) -> Mem + Tot end, 0, Binaries).
 
 -spec load(file:name()) -> ok | {error, atom()}.
 
@@ -106,7 +112,7 @@ format_process_info(#{
     memory             := Memory,
     reductions         := Reductions,
     messages           := Messages,
-    binary             := Binary,
+    binary_memory      := Binary,
     current_stacktrace := Stacktrace
 }) ->
     Bl = "   - ",
