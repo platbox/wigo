@@ -69,7 +69,7 @@ load(Filename) ->
 
 %%
 
--type criterion() :: memory | message_queue | reductions.
+-type criterion() :: memory | binary | message_queue | reductions.
 
 -spec top(criterion()) -> ok.
 -spec top(criterion(), pos_integer()) -> ok.
@@ -83,6 +83,8 @@ top(Param, N) ->
 
 get_sorter(memory) ->
     get_sorter_(memory);
+get_sorter(binary) ->
+    get_sorter_(binary_memory);
 get_sorter(message_queue) ->
     get_sorter_(message_queue_len);
 get_sorter(reductions) ->
