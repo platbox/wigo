@@ -119,7 +119,8 @@ format_process_info(#{
 }) ->
     Bl = "   - ",
     Pre = "        ",
-    Name = case RegName of [] -> pid_to_list(Pid); _ -> to_bin(RegName) end,
+    PidString = pid_to_list(Pid),
+    Name = case RegName of [] -> PidString; _ -> [PidString, $\s, to_bin(RegName)] end,
     [" * ", Name, nl(),
         Bl, "status       : ", to_bin(Status), nl(),
         Bl, "initial call : ", format_call(InitialCall), nl(),
