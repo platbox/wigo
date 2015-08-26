@@ -9,6 +9,7 @@
 -export([dump/1]).
 -export([load/1]).
 
+-export([i/1]).
 -export([top/1]).
 -export([top/2]).
 
@@ -69,7 +70,21 @@ load(Filename) ->
 
 %%
 
+-type pidterm() :: pid() | {pos_integer(), pos_integer(), pos_integer()} | binary() | string().
 -type criterion() :: memory | binary | message_queue | reductions.
+
+-spec i(pidterm() | atom()) -> ok | undefined.
+
+i(Name) when is_atom(Name) ->
+    format_first(lists:dropwhile(fun (#{registered_name := N}) -> N /= Name end, get_dump()));
+i(PidTerm) ->
+    Pid = to_pid(PidTerm),
+    format_first(lists:dropwhile(fun (#{pid := P}) -> P /= Pid end, get_dump())).
+
+format_first([H | _]) ->
+    io:format(format_process_info(H));
+format_first([]) ->
+    undefined.
 
 -spec top(criterion()) -> ok.
 -spec top(criterion(), pos_integer()) -> ok.
@@ -162,8 +177,26 @@ get_temp_dir() ->
         false -> "/tmp"
     end.
 
+to_pid(P) when is_pid(P) ->
+    P;
+to_pid({A, B, C}) ->
+    c:pid(A, B, C);
+to_pid(B) when is_binary(B) ->
+    to_pid(binary_to_list(B));
+to_pid(L) when is_list(L) ->
+    list_to_pid(L).
+
 to_bin(E) ->
     genlib:to_binary(E).
+
+kget(Key, List) ->
+    kget(Key, List, undefined).
+
+kget(Key, List, Default) ->
+    case lists:keyfind(Key, 1, List) of
+        {_, Value} -> Value;
+        false -> Default
+    end.
 
 nl() ->
     io_lib:nl().
