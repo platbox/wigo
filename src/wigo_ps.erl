@@ -116,11 +116,13 @@ load(Filename) ->
 
 -spec i(pidterm() | atom()) -> ok | undefined.
 
-i(Name) when is_atom(Name) ->
-    format_first(lists:dropwhile(fun (#{registered_name := N}) -> N /= Name end, get_dump()));
 i(PidTerm) ->
-    Pid = to_pid(PidTerm),
-    format_first(lists:dropwhile(fun (#{pid := P}) -> P /= Pid end, get_dump())).
+    info(to_pid_or_name(PidTerm)).
+
+info({pid, Pid}) ->
+    format_first(lists:dropwhile(fun (#{pid := P}) -> P /= Pid end, get_dump()));
+info({name, Name}) when is_atom(Name) ->
+    format_first(lists:dropwhile(fun (#{registered_name := N}) -> N /= Name end, get_dump())).
 
 format_first([H | _]) ->
     io:format(format_process_info(H));
@@ -266,14 +268,18 @@ get_temp_dir() ->
         false -> "/tmp"
     end.
 
-to_pid(P) when is_pid(P) ->
-    P;
-to_pid({A, B, C}) ->
-    c:pid(A, B, C);
-to_pid(B) when is_binary(B) ->
-    to_pid(binary_to_list(B));
-to_pid(L) when is_list(L) ->
-    list_to_pid(L).
+to_pid_or_name(N) when is_atom(N) ->
+    {name, N};
+to_pid_or_name(P) when is_pid(P) ->
+    {pid, P};
+to_pid_or_name({A, B, C}) ->
+    {pid, c:pid(A, B, C)};
+to_pid_or_name(B) when is_binary(B) ->
+    to_pid_or_name(binary_to_list(B));
+to_pid_or_name(L = [$< | _]) when is_list(L) ->
+    {pid, list_to_pid(L)};
+to_pid_or_name(L) when is_list(L) ->
+    {name, list_to_atom(L)}.
 
 to_bin(E) ->
     genlib:to_binary(E).
