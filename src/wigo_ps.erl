@@ -69,8 +69,8 @@ gather_ancestry(Info) ->
 
 gather_behaviour(Info) ->
     InitialCall = kget('$initial_call', kget(dictionary, Info)),
-    [CurrentCall | _] = kget(current_stacktrace, Info),
-    select_behaviour(InitialCall, CurrentCall).
+    CurrentCalls = kget(current_stacktrace, Info),
+    select_behaviour(InitialCall, CurrentCalls).
 
 gather_state(Pid, {supervisor, _Module}) ->
     guard(fun () -> {children, supervisor:which_children(Pid)} end);
@@ -88,9 +88,9 @@ guard(Fun) ->
 
 select_behaviour({supervisor, Module, _}, _) ->
     {supervisor, Module};
-select_behaviour({Module, init, 1}, Call) when element(1, Call) == gen_server ->
+select_behaviour({Module, init, 1}, [Call | _]) when element(1, Call) == gen_server ->
     {gen_server, Module};
-select_behaviour({Module, init, 1}, Call) when element(1, Call) == gen_fsm ->
+select_behaviour({Module, init, 1}, [Call | _]) when element(1, Call) == gen_fsm ->
     {gen_fsm, Module};
 select_behaviour({gen_event, _, _}, _) ->
     gen_event;
@@ -242,7 +242,7 @@ format_state_data(Pre, {state, Extra}) ->
     [Pre, genlib:print(Extra, 800), nl()].
 
 format_child({Name, Pid, Type, _}) ->
-    [pad(to_bin(Type), 10), " : ", padl(format_sup_pid(Pid), 12), " ", genlib:print(Name, 60)].
+    [pad(to_bin(Type), 10), " : ", padl(format_sup_pid(Pid), 20), " ", genlib:print(Name, 60)].
 
 format_sup_pid(Special) when is_atom(Special) ->
     [$<, to_bin(Special), $>];
