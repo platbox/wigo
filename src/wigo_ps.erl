@@ -199,10 +199,10 @@ format_line_opt(_, _, []) ->
 format_line_opt(_, _, undefined) ->
     [];
 format_line_opt(Pre, F, List) ->
-    [Pre, F(List), nl()].
+    [Pre, F(List)].
 
 format_ancestry([E]) ->
-    [format_name(E)];
+    [format_name(E), nl()];
 format_ancestry([E | Rest]) ->
     [format_name(E), " <- ", format_ancestry(Rest)].
 
@@ -215,27 +215,20 @@ format_name(Name) when is_atom(Name) ->
     atom_to_binary(Name, utf8).
 
 format_messages(Pre, List) ->
-    Sub = lists:sublist(List, 5),
-    [nl(),
-        [[Pre, genlib:print(M, 100)] || M <- Sub] |
-        case List of
-            Sub -> [];
-            _   -> [Pre, "... and ", to_bin(length(List) - 5), " more"]
-        end
-    ].
+    [nl() | format_sublist(Pre, fun (M) -> genlib:print(M, 100) end, List, 8)].
 
 format_behaviour({What, Module}) ->
-    [to_bin(What), " (via module: ", to_bin(Module), ")"];
+    [to_bin(What), " (via module: ", to_bin(Module), ")", nl()];
 format_behaviour(What) ->
     to_bin(What).
 
 format_state(Pre, What) ->
-    [pad(to_bin(element(1, What)), 12), " : ", nl() | format_state_data(Pre, What)].
+    [[pad(to_bin(element(1, What)), 12), " : ", nl() | format_state_data(Pre, What)] | nl()].
 
 format_state_data(Pre, {handlers, Handlers}) ->
     [[Pre, genlib:print(H, 100), nl()] || H <- Handlers];
 format_state_data(Pre, {children, Children}) ->
-    [[Pre, format_child(C), nl()] || C <- Children];
+    format_sublist(Pre, fun format_child/1, Children, 8);
 format_state_data(Pre, {state, StateName, Extra}) ->
     [Pre, genlib:print(StateName, 100), nl() | format_state_data(Pre, {state, Extra})];
 format_state_data(Pre, {state, Extra}) ->
@@ -248,6 +241,15 @@ format_sup_pid(Special) when is_atom(Special) ->
     [$<, to_bin(Special), $>];
 format_sup_pid(Pid) when is_pid(Pid) ->
     pid_to_list(Pid).
+
+format_sublist(Pre, F, List, N) ->
+    Sub = lists:sublist(List, N),
+    [[[Pre, F(E), nl()] || E <- Sub] |
+        case List of
+            Sub -> [];
+            _   -> [Pre, "... and ", to_bin(length(List) - 5), " more"]
+        end
+    ].
 
 %%
 
